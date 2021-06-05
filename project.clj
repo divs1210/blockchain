@@ -8,8 +8,7 @@
                  [cheshire "5.8.0"]
                  [ring/ring-defaults "0.2.1"]
                  [ring/ring-json "0.4.0"]]
-
-  :plugins [[lein-ring "0.9.7"]]
+  :plugins [[lein-ring "0.12.5"]]
   :ring {:handler blockchain.api/app
          :port 8090}
   :profiles
