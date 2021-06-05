@@ -36,21 +36,21 @@
               :proof proof
               :previous_hash (:previous-hash (core/last-block))})))
 
-(defn transaction-new
+(defn new-transaction
   [{{:keys [sender recipient amount]} :body}]
   (if (and sender recipient amount)
     (json-ok {:message (str "Transaction will be added to Block "
                             (core/new-transaction sender recipient amount))})
     (output-json 400 {:error "A parameter is missing on the request."})))
 
-(defn nodes-register [x]
+(defn register-node [x]
   (-> x
       :body
       :node
       nodes/register-node
       json-ok))
 
-(defn nodes-resolve []
+(defn resolve-conflicts []
   (let [k (nodes/resolve-conflicts)]
     (if (string? k)
       k

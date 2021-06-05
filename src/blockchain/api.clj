@@ -6,12 +6,12 @@
             [ring.middleware.json :as middleware]))
 
 (defroutes app-routes
-  (GET  "/mine"             []  (impl/mine))
-  (GET  "/chain"            []  (impl/chain))
-  (POST "/transactions/new" req (impl/transaction-new req))
-  (POST "/nodes/register"   req (impl/nodes-register req))
-  (GET  "/nodes/resolve"    []  (impl/nodes-resolve))
-  (route/not-found              "Not Found"))
+  (GET  "/mine"           []  (impl/mine))
+  (GET  "/chain"          []  (impl/chain))
+  (POST "/transactions"   req (impl/new-transaction req))
+  (POST "/nodes/register" req (impl/register-node req))
+  (GET  "/nodes/resolve"  []  (impl/resolve-conflicts))
+  (route/not-found            "Not Found"))
 
 (def app
   (do
