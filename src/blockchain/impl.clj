@@ -4,11 +4,8 @@
             [blockchain.nodes :as nodes]
             [blockchain.utils :as utils]))
 
-(def node-identifier (utils/uuidv4))
-
-(defn get-node-id
-  []
-  node-identifier)
+(defonce node-id
+  (utils/uuidv4))
 
 (defn output-json
   [status-code information]
@@ -20,36 +17,41 @@
   [information]
   (output-json 200 information))
 
-(defn genesis-block
-  []
+(defn genesis-block []
+  (core/chain-reset [])
   (core/new-block 100 1))
 
-(defn chain
-  []
-  (json-ok {:length (count @core/chain) :chain  @core/chain} ))
+(defn chain []
+  (json-ok {:length (count @core/chain)
+            :chain  @core/chain}))
 
-(defn mine
-  []
-  (let
-   [proof (proof/proof-of-work (get-in (core/last-block) [:proof]))]
-   (do
-     (core/new-transaction "0" (get-node-id) 1)
-     (core/new-block proof)
-     (json-ok {:message "New block forged" :index (get-in (core/last-block) [:index]) :transactions (get-in (core/last-block) [:transactions]) :proof proof :previous_hash (get-in (core/last-block) [:previous-hash]) }))))
+(defn mine []
+  (let [last-bloock (core/last-block)
+        proof (proof/proof-of-work (:proof last-bloock))]
+    (core/new-transaction "0" node-id 1)
+    (core/new-block proof)
+    (json-ok {:message "New block forged"
+              :index (:index (core/last-block))
+              :transactions (:transactions (core/last-block))
+              :proof proof
+              :previous_hash (:previous-hash (core/last-block))})))
 
 (defn transaction-new
-  [x]
-  (if (and (get-in x [:body :sender]) (get-in x [:body :recipient]) (get-in x [:body :amount]))
-    (json-ok {:message (str "Transaction will be added to Block " (str (core/new-transaction (get-in x [:body :sender]) (get-in x [:body :recipient]) (get-in x [:body :amount]))))})
-    (output-json 400 {:error "A parameter is missing on the request." })))
+  [{{:keys [sender recipient amount]} :body}]
+  (if (and sender recipient amount)
+    (json-ok {:message (str "Transaction will be added to Block "
+                            (core/new-transaction sender recipient amount))})
+    (output-json 400 {:error "A parameter is missing on the request."})))
 
-(defn nodes-register
-  [x]
-  (json-ok (nodes/register-node (get-in x [:body :node] ))))
+(defn nodes-register [x]
+  (-> x
+      :body
+      :node
+      nodes/register-node
+      json-ok))
 
-(defn nodes-resolve
-  []
+(defn nodes-resolve []
   (let [k (nodes/resolve-conflicts)]
-    (if (= (type k) (type ""))
+    (if (string? k)
       k
       "All conflicts were resolved. Chain was updated")))

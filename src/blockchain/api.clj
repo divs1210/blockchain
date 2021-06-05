@@ -1,9 +1,9 @@
 (ns blockchain.api
-  (:require [compojure.core :refer :all]
+  (:require [blockchain.impl :as impl]
+            [compojure.core :refer [defroutes GET POST]]
             [compojure.route :as route]
-            [ring.middleware.defaults :refer [wrap-defaults site-defaults]]
-            [ring.middleware.json :as middleware]
-            [blockchain.impl :as impl]))
+            [ring.middleware.defaults :refer [site-defaults wrap-defaults]]
+            [ring.middleware.json :as middleware]))
 
 (defroutes app-routes
   (GET  "/mine"             []  (impl/mine))
@@ -15,11 +15,13 @@
 
 (def app
   (do
-    (println (str "Initialzing blockchain with identifier " (impl/get-node-id) "."))
+    (println (str "Initialzing blockchain with identifier " impl/node-id "."))
+
     (println "Inserting genesis block...")
     (impl/genesis-block)
+
     (println "Genesis block inserted. Starting API...")
-    (->
-      (wrap-defaults app-routes (assoc-in site-defaults [:security :anti-forgery] false))
-      (middleware/wrap-json-body {:keywords? true})
-      middleware/wrap-json-response)))
+    (-> app-routes
+        (wrap-defaults (assoc-in site-defaults [:security :anti-forgery] false))
+        (middleware/wrap-json-body {:keywords? true})
+        middleware/wrap-json-response)))

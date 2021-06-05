@@ -1,9 +1,11 @@
 (ns blockchain.core
   (:require [blockchain.utils :as utils]))
 
-(def chain (atom []))
+(defonce chain
+  (atom []))
 
-(def current-transactions (atom []))
+(defonce current-transactions
+  (atom []))
 
 (defn chain-add
   [-data]
@@ -11,11 +13,11 @@
 
 (defn chain-reset
   [new-chain]
-  (reset! chain new-chain))
+  (reset! chain (vec new-chain)))
 
 (defn last-block
   []
-  (last @chain))
+  (peek @chain))
 
 (defn transactions-add
   [-data]
@@ -27,13 +29,23 @@
 
 (defn new-transaction
   [sender recipient amount]
-  (transactions-add (into (sorted-map) {:sender sender :recipient recipient :amount amount}))
-  (inc (get-in (last-block) [:index])))
+  (transactions-add (sorted-map
+                     :sender sender
+                     :recipient recipient
+                     :amount amount))
+
+  (-> (last-block) :index inc))
 
 (defn new-block
   ([proof previous-hash]
-   (do
-    (chain-add (into (sorted-map) {:index (count @chain) :timestamp (System/currentTimeMillis) :transactions @current-transactions :proof proof :previous-hash previous-hash}))
-    (transactions-reset)
-    (count @chain)))
-  ([proof] (new-block proof (utils/sha256hash (str (last-block))))))
+   (chain-add (sorted-map
+               :index (count @chain)
+               :timestamp (System/currentTimeMillis)
+               :transactions @current-transactions
+               :proof proof
+               :previous-hash previous-hash))
+   (transactions-reset)
+   (count @chain))
+  ([proof]
+   (new-block proof
+              (utils/sha256hash (pr-str (last-block))))))
